@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>鉱石・宝石ハンター | 日本の鉱物鑑定・産地案内</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="鉱石ハンター">
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/1e293b/fbbf24?text=💎">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        .glow-effect {
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <header class="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-amber-500 to-yellow-300 p-2 rounded-xl text-slate-900 font-bold shadow-lg">
+                    💎
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight text-amber-400">鉱石・宝石ハンター</h1>
+                    <p class="text-xs text-slate-400">AI鑑定・日本の産地ナビ</p>
+                </div>
+            </div>
+            <button onclick="openEncyclopediaModal()" class="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded-xl text-xs font-medium transition duration-200">
+                <span>📚</span>
+                <span>マイ図鑑</span>
+                <span id="encyclopedia-badge" class="bg-amber-500 text-slate-950 font-bold px-1.5 py-0.5 rounded-full text-[10px] min-w-[18px] text-center">0/30</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-6 flex-1 w-full">
+
+        <div class="bg-slate-900 p-1.5 rounded-2xl border border-slate-800 flex mb-6 shadow-inner">
+            <button id="tab-photo-btn" onclick="switchTab('photo')" class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 bg-amber-500 text-slate-950 shadow-md">
+                📷 写真から探す
+            </button>
+            <button id="tab-text-btn" onclick="switchTab('text')" class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200">
+                📝 特徴・名前で探す
+            </button>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 md:p-6 shadow-xl mb-8 glow-effect">
+            <form id="stone-form" onsubmit="handleAnalyze(event)">
+                
+                <div id="photo-input-section" class="space-y-4">
+                    <label class="block text-sm font-medium text-slate-300">
+                        石の写真を選択（撮影・選択）
+                    </label>
+
+                    <div class="relative border-2 border-dashed border-slate-700 hover:border-amber-500/60 rounded-2xl p-4 text-center cursor-pointer transition group bg-slate-950/40" onclick="document.getElementById('stone-image').click()">
+                        <input type="file" id="stone-image" accept="image/*" capture="environment" class="hidden">
+
+                        <div id="upload-placeholder" class="py-6 flex flex-col items-center justify-center space-y-3">
+                            <div class="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center text-2xl group-hover:scale-110 transition duration-200 border border-slate-700">
+                                📸
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-slate-200">タップして写真を撮影または選択</p>
+                                <p class="text-xs text-amber-400 mt-1">※自動で最適サイズに軽量化されます</p>
+                            </div>
+                        </div>
+
+                        <div id="preview-container" class="hidden relative rounded-xl overflow-hidden max-h-64 mx-auto">
+                            <img id="image-preview" src="" alt="石の写真プレビュー" class="w-full h-64 object-contain rounded-xl bg-slate-950">
+                            <button type="button" onclick="removeImage(event)" class="absolute top-2 right-2 bg-slate-900/80 hover:bg-rose-600 text-white p-1.5 rounded-full text-xs transition">
+                                ✖ 削除
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="photo-notes" class="block text-xs font-medium text-slate-400 mb-1">
+                            補足情報（発見場所、硬さ、重さ、透明度など ※任意）
+                        </label>
+                        <input type="text" id="photo-notes" placeholder="例：新潟県の海岸で拾った。透明感があり重い。" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition">
+                    </div>
+                </div>
+
+                <div id="text-input-section" class="hidden space-y-4">
+                    <div>
+                        <label for="stone-name" class="block text-sm font-medium text-slate-300 mb-1">
+                            石の名前または予想（分からなければ空欄でOK）
+                        </label>
+                        <input type="text" id="stone-name" placeholder="例：水晶、翡翠、ガーネットなど" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition">
+                    </div>
+
+                    <div>
+                        <label for="stone-features" class="block text-sm font-medium text-slate-300 mb-1">
+                            石の特徴や採集条件 <span class="text-amber-400 text-xs">*必須</span>
+                        </label>
+                        <textarea id="stone-features" rows="4" placeholder="例：緑色で透明感があり、非常に硬い。川の上流で見つけました。六角柱の形をしています。" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition resize-none"></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <button type="submit" id="submit-btn" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold py-3.5 px-6 rounded-2xl shadow-lg shadow-amber-500/20 active:scale-[0.98] transition duration-200 flex items-center justify-center space-x-2">
+                        <span>🔍 鉱物を判定・産地を探す</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="error-message" class="hidden mb-6 p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-300 text-sm">
+            <span class="font-bold block mb-1">⚠️ 分析エラーが発生しました</span>
+            <span id="error-text">画像ファイルが大きすぎるか、ネットワークエラーが発生しました。</span>
+        </div>
+
+        <div id="loading-container" class="hidden bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-xl">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-amber-500 border-t-transparent"></div>
+            <div>
+                <h3 class="text-lg font-bold text-slate-100">AI鉱物鑑別士が分析中...</h3>
+                <p class="text-xs text-slate-400 mt-1">画像を圧縮して安全に解析中。日本の産地データと照合しています。</p>
+            </div>
+        </div>
+
+        <div id="result-container" class="hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl pointer-events-none"></div>
+
+                <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-800 gap-2">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-semibold px-2.5 py-1 bg-amber-500/10 text-amber-400 rounded-full border border-amber-500/20">推定された鉱物</span>
+                            <span id="result-category" class="text-xs text-slate-400">珪酸塩鉱物</span>
+                        </div>
+                        <h2 id="result-title" class="text-2xl font-bold text-amber-300 mt-1">翡翠（ヒスイ輝石）</h2>
+                        <p id="result-en-title" class="text-xs text-slate-400 italic">Jadeite / NaAlSi₂O₆</p>
+                    </div>
+                    <div class="text-right flex md:flex-col items-center md:items-end justify-between">
+                        <span class="text-xs text-slate-400">推定確信度</span>
+                        <span id="result-confidence" class="text-lg font-bold text-emerald-400">高 (85%)</span>
+                    </div>
+                </div>
+
+                <div class="mt-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4">
+                    <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2 flex items-center space-x-1.5">
+                        <span>🔎</span>
+                        <span>画像・特徴からの推定ポイント</span>
+                    </h3>
+                    <ul id="result-visual-points" class="list-disc list-inside text-xs text-amber-100 space-y-1">
+                        <li>緻密な微細結晶集合体特有のマットな光沢感</li>
+                    </ul>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 my-6">
+                    <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800/80">
+                        <span class="text-[10px] text-slate-400 block uppercase">モース硬度</span>
+                        <span id="result-hardness" class="text-sm font-bold text-slate-200">6.5 - 7.0</span>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800/80">
+                        <span class="text-[10px] text-slate-400 block uppercase">比重</span>
+                        <span id="result-density" class="text-sm font-bold text-slate-200">約 3.3</span>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800/80">
+                        <span class="text-[10px] text-slate-400 block uppercase">条痕色</span>
+                        <span id="result-streak" class="text-sm font-bold text-slate-200">白色</span>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800/80">
+                        <span class="text-[10px] text-slate-400 block uppercase">結晶系</span>
+                        <span id="result-crystal" class="text-sm font-bold text-slate-200">単斜晶系</span>
+                    </div>
+                </div>
+
+                <div class="space-y-3 text-sm text-slate-300 leading-relaxed">
+                    <h3 class="font-bold text-slate-100 border-l-4 border-amber-500 pl-2">学術的解説・特徴</h3>
+                    <p id="result-description" class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800/60">
+                        解説テキストがここに入ります。
+                    </p>
+                </div>
+
+                <div class="mt-6 bg-slate-950/80 border border-indigo-500/20 rounded-2xl p-5 space-y-4">
+                    <h3 class="text-sm font-bold text-indigo-300 flex items-center space-x-2 border-b border-indigo-500/20 pb-2">
+                        <span>💡</span>
+                        <span>鉱物豆知識（言葉・由来・歴史）</span>
+                    </h3>
+
+                    <div class="grid md:grid-cols-3 gap-4 text-xs">
+                        <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+                            <span class="font-bold text-amber-400 block mb-1">✨ 石言葉・象徴</span>
+                            <p id="result-trivia-meaning" class="text-slate-300">「繁栄」「長寿」「幸運」</p>
+                        </div>
+                        <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+                            <span class="font-bold text-sky-400 block mb-1">📜 名前の由来</span>
+                            <p id="result-trivia-origin" class="text-slate-300">カワセミの羽の美しい緑色に由来します。</p>
+                        </div>
+                        <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+                            <span class="font-bold text-emerald-400 block mb-1">🏛️ 伝統的な用途・歴史</span>
+                            <p id="result-trivia-history" class="text-slate-300">縄文時代から勾玉として珍重されてきました。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-slate-100 border-l-4 border-amber-500 pl-2">🇯🇵 日本国内で拾える・観察できる産地案内</h3>
+                        <span class="text-xs text-slate-400">※採集ルールを遵守してください</span>
+                    </div>
+
+                    <div id="result-spots-container" class="grid gap-4 md:grid-cols-2">
+                        <!-- Spot items -->
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-4 border-t border-slate-800 flex justify-end">
+                    <button id="save-encyclopedia-btn" onclick="saveCurrentToEncyclopedia()" class="w-full md:w-auto bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/40 font-bold px-6 py-3 rounded-xl transition duration-200 flex items-center justify-center space-x-2">
+                        <span>📖</span>
+                        <span>マイ石図鑑に記録する</span>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <div id="encyclopedia-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xl">📖</span>
+                    <h2 class="text-lg font-bold text-amber-400">マイ石図鑑 (最大30件)</h2>
+                </div>
+                <button onclick="closeEncyclopediaModal()" class="text-slate-400 hover:text-slate-100 text-lg p-1">✖</button>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-1 space-y-4">
+                <div id="encyclopedia-empty" class="text-center py-12 text-slate-400 space-y-3">
+                    <p class="text-4xl">💎</p>
+                    <p class="text-sm">まだ図鑑に登録された石はありません。</p>
+                </div>
+
+                <div id="encyclopedia-list" class="grid gap-4 sm:grid-cols-2">
+                    <!-- Cards populated via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="detail-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                <h3 class="font-bold text-amber-400 text-md">図鑑の詳細表示</h3>
+                <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-100 text-lg">✖</button>
+            </div>
+            <div id="detail-modal-body" class="p-6 overflow-y-auto flex-1 space-y-4 text-sm">
+                <!-- Detail content -->
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-slate-900 border-t border-slate-800 py-6 text-center text-xs text-slate-500 mt-12">
+        <div class="max-w-4xl mx-auto px-4 space-y-2">
+            <p>※本アプリの鑑定結果はAIによる推定です。危険な場所での採取は避け、地元の法律や文化財保護法を遵守してください。</p>
+            <p>© 2026 鉱石・宝石ハンター | 日本産地案内ナビ</p>
+        </div>
+    </footer>
+
+    <script>
+        let currentTab = 'photo';
+        let selectedBase64Image = null; 
+        let currentParsedData = null;
+        const MAX_ENCYCLOPEDIA_ITEMS = 30;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateEncyclopediaBadge();
+            setupImageUploadHandler();
+        });
+
+        function compressImage(file, maxWidth = 1024, maxHeight = 1024, quality = 0.8) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onerror = (e) => reject(e);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onerror = (e) => reject(e);
+                    img.onload = () => {
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > maxWidth) {
+                                height = Math.round((height * maxWidth) / width);
+                                width = maxWidth;
+                            }
+                        } else {
+                            if (height > maxHeight) {
+                                width = Math.round((width * maxHeight) / height);
+                                height = maxHeight;
+                            }
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+                        resolve(compressedBase64);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function setupImageUploadHandler() {
+            const fileInput = document.getElementById('stone-image');
+            const previewContainer = document.getElementById('preview-container');
+            const uploadPlaceholder = document.getElementById('upload-placeholder');
+            const imagePreview = document.getElementById('image-preview');
+
+            if (!fileInput) return;
+
+            fileInput.addEventListener('change', async function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                hideError();
+
+                try {
+                    selectedBase64Image = await compressImage(file);
+                    imagePreview.src = selectedBase64Image;
+                    previewContainer.classList.remove('hidden');
+                    uploadPlaceholder.classList.add('hidden');
+                } catch (err) {
+                    console.error("Image loading failed", err);
+                    showError("画像の読み込みに失敗しました。別の形式の画像を試してください。");
+                }
+            });
+        }
+
+        function showError(msg) {
+            const errBox = document.getElementById('error-message');
+            const errText = document.getElementById('error-text');
+            if (errBox && errText) {
+                errText.innerText = msg;
+                errBox.classList.remove('hidden');
+            }
+        }
+
+        function hideError() {
+            const errBox = document.getElementById('error-message');
+            if (errBox) errBox.classList.add('hidden');
+        }
+
+        function getEncyclopedia() {
+            try {
+                return JSON.parse(localStorage.getItem('gem_encyclopedia') || '[]');
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveEncyclopedia(list) {
+            localStorage.setItem('gem_encyclopedia', JSON.stringify(list));
+            updateEncyclopediaBadge();
+        }
+
+        function updateEncyclopediaBadge() {
+            const items = getEncyclopedia();
+            const badge = document.getElementById('encyclopedia-badge');
+            if (badge) {
+                badge.innerText = `${items.length}/${MAX_ENCYCLOPEDIA_ITEMS}`;
+            }
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            const photoBtn = document.getElementById('tab-photo-btn');
+            const textBtn = document.getElementById('tab-text-btn');
+            const photoSection = document.getElementById('photo-input-section');
+            const textSection = document.getElementById('text-input-section');
+
+            hideError();
+
+            if (tab === 'photo') {
+                photoBtn.className = "flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 bg-amber-500 text-slate-950 shadow-md";
+                textBtn.className = "flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200";
+                photoSection.classList.remove('hidden');
+                textSection.classList.add('hidden');
+            } else {
+                textBtn.className = "flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 bg-amber-500 text-slate-950 shadow-md";
+                photoBtn.className = "flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200";
+                textSection.classList.remove('hidden');
+                photoSection.classList.add('hidden');
+            }
+        }
+
+        function removeImage(e) {
+            e.stopPropagation();
+            selectedBase64Image = null;
+            document.getElementById('stone-image').value = "";
+            document.getElementById('preview-container').classList.add('hidden');
+            document.getElementById('upload-placeholder').classList.remove('hidden');
+        }
+
+        async function handleAnalyze(event) {
+            event.preventDefault();
+            hideError();
+
+            const notes = document.getElementById('photo-notes').value.trim();
+            const stoneName = document.getElementById('stone-name').value.trim();
+            const stoneFeatures = document.getElementById('stone-features').value.trim();
+
+            if (currentTab === 'photo' && !selectedBase64Image && !notes) {
+                showError('石の写真を撮影・選択するか、補足情報を入力してください。');
+                return;
+            }
+
+            if (currentTab === 'text' && !stoneFeatures && !stoneName) {
+                showError('石の特徴や予想される名前を入力してください。');
+                return;
+            }
+
+            document.getElementById('loading-container').classList.remove('hidden');
+            document.getElementById('result-container').classList.add('hidden');
+
+            try {
+                const systemPrompt = "あなたは日本のプロの鉱物学者・宝石鑑定士です。受け取った鉱物・宝石・岩石の情報から鑑定結果を出し、必ず指示されたJSONフォーマットのみを返してください。";
+
+                const userPrompt = `
+与えられた情報から日本の鉱物知識・産地データベースと照合し、鑑定・推定結果を以下のJSON形式のみで出力してください。
+
+{
+  "name": "鉱物・宝石の日本語名称 (例: 翡翠 / ヒスイ輝石)",
+  "enName": "英語名および化学式 (例: Jadeite / NaAlSi₂O₆)",
+  "category": "分類 (例: 珪酸塩鉱物)",
+  "confidence": "推定確信度 (例: 高 (85%))",
+  "visualPoints": [
+    "画像または入力特徴から判断した決め手ポイント1",
+    "結晶の見た目や色調のポイント2"
+  ],
+  "hardness": "モース硬度 (例: 6.5 - 7.0)",
+  "density": "比重 (例: 約 3.3)",
+  "streak": "条痕色 (例: 白色)",
+  "crystalSystem": "結晶系 (例: 単斜晶系)",
+  "description": "特徴や鑑別の根拠に関する詳しい解説 (150-200文字)",
+  "trivia": {
+    "meaning": "石言葉や象徴される意味",
+    "origin": "名前の由来",
+    "history": "伝統的な用途や歴史"
+  },
+  "spots": [
+    {
+      "name": "国内産地名称 (例: 新潟県 糸魚川市 姫川海岸)",
+      "type": "海岸 / 川 / 鉱床",
+      "description": "採集・観察におけるポイント",
+      "mapQuery": "Google Maps検索クエリ"
+    }
+  ]
+}
+
+入力条件:
+- モード: ${currentTab}
+- 石の名前: ${stoneName || '未指定'}
+- 特徴・補足: ${stoneFeatures || notes || '画像分析'}
+`;
+
+                const parts = [];
+
+                if (currentTab === 'photo' && selectedBase64Image) {
+                    const mimeType = selectedBase64Image.split(';')[0].split(':')[1];
+                    const base64Data = selectedBase64Image.split(',')[1];
+                    parts.push({
+                        inlineData: { mimeType: mimeType, data: base64Data }
+                    });
+                }
+
+                parts.push({ text: userPrompt });
+
+                const payload = {
+                    contents: [{ parts: parts }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: {
+                        responseMimeType: "application/json"
+                    }
+                };
+
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                let response = null;
+                let maxRetries = 3;
+                let delay = 1000;
+
+                for (let i = 0; i < maxRetries; i++) {
+                    try {
+                        response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (response.ok) {
+                            break;
+                        }
+
+                        if ((response.status === 503 || response.status === 429) && i < maxRetries - 1) {
+                            await new Promise(res => setTimeout(res, delay));
+                            delay *= 2;
+                            continue;
+                        }
+
+                        throw new Error(`API通信エラー (${response.status})`);
+                    } catch (retryErr) {
+                        if (i === maxRetries - 1) throw retryErr;
+                        await new Promise(res => setTimeout(res, delay));
+                        delay *= 2;
+                    }
+                }
+
+                if (!response || !response.ok) {
+                    throw new Error(`API通信エラー (${response ? response.status : '接続失敗'})`);
+                }
+
+                const result = await response.json();
+                const rawJsonStr = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (!rawJsonStr) {
+                    throw new Error("鑑定結果を取得できませんでした。");
+                }
+
+                const parsed = JSON.parse(rawJsonStr);
+                currentParsedData = parsed;
+                renderResult(parsed);
+
+            } catch (err) {
+                console.error("Gemini API Error:", err);
+                showError(`判定中にエラーが発生しました: ${err.message || '通信エラー'}\n（※サーバーが混雑している場合があります。数秒おいて再度お試しください）`);
+            } finally {
+                document.getElementById('loading-container').classList.add('hidden');
+            }
+        }
+
+        function renderResult(data) {
+            document.getElementById('result-title').innerText = data.name || '不明の鉱物';
+            document.getElementById('result-en-title').innerText = data.enName || '';
+            document.getElementById('result-category').innerText = data.category || '一般鉱物';
+            document.getElementById('result-confidence').innerText = data.confidence || '推定';
+
+            const pointsUl = document.getElementById('result-visual-points');
+            pointsUl.innerHTML = '';
+            if (data.visualPoints && Array.isArray(data.visualPoints) && data.visualPoints.length > 0) {
+                data.visualPoints.forEach(pt => {
+                    const li = document.createElement('li');
+                    li.innerText = pt;
+                    pointsUl.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.innerText = '入力された特徴および画像より推定';
+                pointsUl.appendChild(li);
+            }
+
+            document.getElementById('result-hardness').innerText = data.hardness || '-';
+            document.getElementById('result-density').innerText = data.density || '-';
+            document.getElementById('result-streak').innerText = data.streak || '-';
+            document.getElementById('result-crystal').innerText = data.crystalSystem || '-';
+            document.getElementById('result-description').innerText = data.description || '';
+
+            if (data.trivia) {
+                document.getElementById('result-trivia-meaning').innerText = data.trivia.meaning || '情報なし';
+                document.getElementById('result-trivia-origin').innerText = data.trivia.origin || '情報なし';
+                document.getElementById('result-trivia-history').innerText = data.trivia.history || '情報なし';
+            }
+
+            const spotsContainer = document.getElementById('result-spots-container');
+            spotsContainer.innerHTML = '';
+
+            if (data.spots && Array.isArray(data.spots) && data.spots.length > 0) {
+                data.spots.forEach(spot => {
+                    const spotDiv = document.createElement('div');
+                    spotDiv.className = "bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 flex flex-col justify-between";
+                    spotDiv.innerHTML = `
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-slate-100 text-sm">📍 ${spot.name || '国内産地'}</span>
+                                <span class="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/30">${spot.type || '産地'}</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-2 leading-relaxed">${spot.description || ''}</p>
+                        </div>
+                        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.mapQuery || spot.name)}" target="_blank" rel="noopener noreferrer" class="mt-3 inline-flex items-center justify-center space-x-1 w-full bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-700 py-2 rounded-xl text-xs transition">
+                            <span>🗺️ Google Mapで開く</span>
+                        </a>
+                    `;
+                    spotsContainer.appendChild(spotDiv);
+                });
+            } else {
+                spotsContainer.innerHTML = `<p class="text-xs text-slate-400 col-span-2">産地情報が見つかりませんでした。</p>`;
+            }
+
+            document.getElementById('result-container').classList.remove('hidden');
+            document.getElementById('result-container').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function saveCurrentToEncyclopedia() {
+            if (!currentParsedData) return;
+
+            let encyclopedia = getEncyclopedia();
+            if (encyclopedia.length >= MAX_ENCYCLOPEDIA_ITEMS) {
+                alert(`マイ石図鑑の登録上限（${MAX_ENCYCLOPEDIA_ITEMS}件）に達しています。不要な項目を削除してください。`);
+                return;
+            }
+
+            const newItem = {
+                id: Date.now(),
+                date: new Date().toLocaleDateString('ja-JP'),
+                image: selectedBase64Image || null,
+                data: currentParsedData
+            };
+
+            encyclopedia.unshift(newItem);
+            saveEncyclopedia(encyclopedia);
+            alert(`「${currentParsedData.name}」を図鑑に保存しました！`);
+        }
+
+        function openEncyclopediaModal() {
+            renderEncyclopediaList();
+            document.getElementById('encyclopedia-modal').classList.remove('hidden');
+        }
+
+        function closeEncyclopediaModal() {
+            document.getElementById('encyclopedia-modal').classList.add('hidden');
+        }
+
+        function renderEncyclopediaList() {
+            const list = getEncyclopedia();
+            const emptyEl = document.getElementById('encyclopedia-empty');
+            const listEl = document.getElementById('encyclopedia-list');
+
+            listEl.innerHTML = '';
+
+            if (list.length === 0) {
+                emptyEl.classList.remove('hidden');
+            } else {
+                emptyEl.classList.add('hidden');
+
+                list.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = "bg-slate-950 p-4 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-3";
+                    
+                    const imgHtml = item.image 
+                        ? `<img src="${item.image}" class="w-full h-32 object-cover rounded-xl bg-slate-900">`
+                        : `<div class="w-full h-32 rounded-xl bg-slate-900 flex items-center justify-center text-3xl text-slate-600">💎</div>`;
+
+                    card.innerHTML = `
+                        <div>
+                            ${imgHtml}
+                            <div class="mt-3 flex items-center justify-between">
+                                <span class="text-[10px] text-slate-500">${item.date}</span>
+                                <span class="text-[10px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/20">${item.data.category || '鉱物'}</span>
+                            </div>
+                            <h3 class="font-bold text-amber-300 text-base mt-1">${item.data.name || '名称不明'}</h3>
+                            <p class="text-xs text-slate-400 line-clamp-2 mt-1">${item.data.description || ''}</p>
+                        </div>
+                        <div class="flex items-center space-x-2 pt-2 border-t border-slate-900">
+                            <button onclick='viewDetail(${item.id})' class="flex-1 bg-slate-800 hover:bg-slate-700 text-amber-400 py-1.5 rounded-xl text-xs transition">詳細を見る</button>
+                            <button onclick='deleteEncyclopediaItem(${item.id})' class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 p-1.5 rounded-xl text-xs transition">削除</button>
+                        </div>
+                    `;
+                    listEl.appendChild(card);
+                });
+            }
+        }
+
+        function deleteEncyclopediaItem(id) {
+            let list = getEncyclopedia();
+            list = list.filter(item => item.id !== id);
+            saveEncyclopedia(list);
+            renderEncyclopediaList();
+        }
+
+        function viewDetail(id) {
+            const list = getEncyclopedia();
+            const item = list.find(i => i.id === id);
+            if (!item) return;
+
+            const modalBody = document.getElementById('detail-modal-body');
+            const data = item.data;
+
+            const imgHtml = item.image 
+                ? `<img src="${item.image}" class="w-full h-48 object-contain rounded-2xl bg-slate-950 mb-4 border border-slate-800">`
+                : '';
+
+            modalBody.innerHTML = `
+                ${imgHtml}
+                <div class="space-y-4">
+                    <div>
+                        <span class="text-xs text-slate-400">${data.category || ''}</span>
+                        <h2 class="text-xl font-bold text-amber-300">${data.name || ''}</h2>
+                        <p class="text-xs text-slate-500 italic">${data.enName || ''}</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 text-xs bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                        <div><span class="text-slate-500">硬度:</span> ${data.hardness || '-'}</div>
+                        <div><span class="text-slate-500">比重:</span> ${data.density || '-'}</div>
+                        <div><span class="text-slate-500">条痕:</span> ${data.streak || '-'}</div>
+                        <div><span class="text-slate-500">結晶:</span> ${data.crystalSystem || '-'}</div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-amber-400 mb-1">解説</h4>
+                        <p class="text-slate-300 text-xs leading-relaxed bg-slate-950/50 p-3 rounded-xl border border-slate-800/60">${data.description || ''}</p>
+                    </div>
+
+                    ${data.trivia ? `
+                        <div class="bg-indigo-950/20 border border-indigo-500/20 p-3 rounded-xl space-y-1 text-xs">
+                            <p><span class="text-amber-400 font-bold">石言葉:</span> ${data.trivia.meaning || '-'}</p>
+                            <p><span class="text-sky-400 font-bold">由来:</span> ${data.trivia.origin || '-'}</p>
+                            <p><span class="text-emerald-400 font-bold">歴史:</span> ${data.trivia.history || '-'}</p>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            document.getElementById('detail-modal').classList.remove('hidden');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detail-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
